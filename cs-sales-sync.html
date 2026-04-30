@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS × Sales Sync — Vantage Analytics</title>
+<style>
+:root {
+  color-scheme: light;
+
+  --bg:        oklch(0.97 0.006 85);
+  --surface:   oklch(0.99 0.003 85);
+  --surface2:  oklch(0.94 0.008 85);
+
+  --sidebar-bg:     oklch(0.31 0.05 212);
+  --sidebar-hover:  oklch(0.37 0.05 212);
+  --sidebar-active: oklch(0.40 0.06 212);
+  --sidebar-text:   oklch(0.91 0.02 210);
+  --sidebar-muted:  oklch(0.60 0.03 210);
+  --sidebar-border: oklch(0.40 0.04 212);
+
+  --primary:       oklch(0.26 0.14 262);
+  --primary-mid:   oklch(0.38 0.12 262);
+  --primary-light: oklch(0.92 0.04 262);
+
+  --accent:      oklch(0.64 0.08 188);
+  --accent-dark: oklch(0.52 0.08 188);
+  --accent-text: oklch(0.17 0.05 188);
+
+  --steel:       oklch(0.50 0.10 235);
+  --steel-light: oklch(0.92 0.04 235);
+  --steel-text:  oklch(0.20 0.08 235);
+
+  --text-primary:   oklch(0.20 0.04 240);
+  --text-secondary: oklch(0.44 0.03 225);
+  --text-muted:     oklch(0.60 0.02 220);
+  --border:         oklch(0.88 0.01 85);
+  --border-strong:  oklch(0.78 0.01 85);
+
+  --success:    oklch(0.53 0.15 155);
+  --success-bg: oklch(0.94 0.04 155);
+  --warning:    oklch(0.60 0.14 75);
+  --warning-bg: oklch(0.95 0.05 75);
+  --danger:     oklch(0.51 0.18 25);
+  --danger-bg:  oklch(0.95 0.05 25);
+  --neutral-bg: oklch(0.92 0.01 85);
+
+  --font-display: 'Gill Sans', 'Optima', Candara, 'Trebuchet MS', sans-serif;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-primary);
+  display: flex;
+  min-height: 100vh;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* ─── SIDEBAR ───────────────────────────── */
+.sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.sidebar-header {
+  padding: 22px 18px 18px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+.sidebar-brand {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 5px;
+}
+.sidebar-title { font-size: 12px; color: var(--sidebar-text); font-weight: 500; line-height: 1.35; }
+.sidebar-date  { font-size: 11px; color: var(--sidebar-muted); margin-top: 6px; }
+
+.agenda-nav {
+  flex: 1;
+  padding: 10px 0;
+  overflow-y: auto;
+  position: relative;
+}
+.agenda-track {
+  position: absolute;
+  left: 30px; top: 22px; bottom: 22px;
+  width: 1px;
+  background: var(--sidebar-border);
+  pointer-events: none;
+}
+.agenda-item {
+  position: relative;
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.agenda-item:hover  { background: var(--sidebar-hover); }
+.agenda-item.active { background: var(--sidebar-active); }
+
+.agenda-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--sidebar-border);
+  background: var(--sidebar-bg);
+  flex-shrink: 0; position: relative; z-index: 1;
+  transition: all 0.18s;
+}
+.agenda-item.done   .agenda-dot { background: var(--accent); border-color: var(--accent); }
+.agenda-item.active .agenda-dot {
+  background: oklch(0.90 0.06 88);
+  border-color: oklch(0.90 0.06 88);
+  box-shadow: 0 0 0 3px oklch(0.90 0.06 88 / 0.25);
+}
+.agenda-label { font-size: 12.5px; font-weight: 500; color: oklch(0.68 0.03 210); flex: 1; transition: color 0.12s; }
+.agenda-item.active .agenda-label { color: var(--sidebar-text); }
+.agenda-item.done   .agenda-label { color: oklch(0.54 0.04 200); }
+.agenda-dur { font-size: 10.5px; color: var(--sidebar-muted); }
+
+/* ─── MAIN ──────────────────────────────── */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 11px 28px;
+  display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-eyebrow {
+  font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--text-muted); margin-bottom: 1px;
+}
+.topbar-section {
+  font-family: var(--font-display);
+  font-size: 19px; font-weight: 600;
+  color: var(--primary); letter-spacing: 0.01em; flex: 1;
+}
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+.btn {
+  padding: 6px 13px;
+  border-radius: 5px; border: 1px solid var(--border);
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.12s;
+  background: var(--surface); color: var(--text-primary); white-space: nowrap;
+}
+.btn:hover { background: var(--surface2); }
+.btn-primary { background: var(--primary); color: oklch(0.94 0.02 88); border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-mid); }
+.btn-sm-accent {
+  padding: 4px 10px;
+  border-radius: 4px; border: none;
+  font-family: var(--font-body); font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all 0.12s;
+  background: var(--primary); color: oklch(0.94 0.02 88);
+}
+.btn-sm-accent:hover { background: var(--primary-mid); }
+
+.content { flex: 1; padding: 24px 28px; overflow-y: auto; }
+
+.navbar {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 10px 28px; display: flex; align-items: center; gap: 8px;
+}
+.navbar-info { flex: 1; font-size: 11.5px; color: var(--text-muted); }
+
+/* ─── SHARED COMPONENTS ─────────────────── */
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 14px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--primary);
+  margin-bottom: 14px; padding-bottom: 7px;
+  border-bottom: 2px solid var(--primary-light);
+  display: flex; align-items: center; gap: 7px;
+}
+.section-heading-add {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--primary-mid);
+  background: none; color: var(--primary-mid);
+  font-size: 14px; font-weight: 700; line-height: 1;
+  cursor: pointer; flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
+  text-transform: none; letter-spacing: 0;
+}
+.section-heading-add:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
+.sublabel {
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--text-muted); margin-bottom: 9px;
+}
+
+.stat-card {
+  flex: 1;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 7px; padding: 14px 18px;
+}
+.stat-val {
+  font-family: var(--font-display); font-size: 30px; font-weight: 700;
+  color: var(--primary); line-height: 1; margin-bottom: 3px;
+}
+.stat-card.success .stat-val { color: var(--success); }
+.stat-card.warning .stat-val { color: var(--warning); }
+.stat-card.danger  .stat-val { color: var(--danger); }
+.stat-lbl { font-size: 11.5px; color: var(--text-secondary); font-weight: 500; }
+
+/* Tables */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table thead th {
+  text-align: left; padding: 8px 12px;
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-muted); border-bottom: 1px solid var(--border);
+  white-space: nowrap; background: var(--surface2);
+}
+.data-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+.data-table tbody tr:hover { background: oklch(0.95 0.004 85); }
+.data-table tbody tr:last-child { border-bottom: none; }
+.data-table td { padding: 10px 12px; vertical-align: top; }
+
+/* Status pills */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.pill-expand  { background: var(--success-bg); color: oklch(0.38 0.14 155); }
+.pill-expand::before  { background: var(--success); }
+.pill-risk    { background: var(--danger-bg);  color: oklch(0.42 0.17 25); }
+.pill-risk::before    { background: var(--danger); }
+.pill-caution { background: var(--warning-bg); color: oklch(0.46 0.13 70); }
+.pill-caution::before { background: var(--warning); }
+.pill-active  { background: var(--steel-light); color: var(--steel-text); }
+.pill-active::before  { background: var(--steel); }
+.pill-neutral { background: var(--neutral-bg); color: var(--text-muted); }
+.pill-neutral::before { background: var(--border-strong); }
+
+/* Action items (prior actions) */
+.action-list { display: flex; flex-direction: column; }
+.action-row {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.action-row:last-child { border-bottom: none; }
+.action-row:hover { background: oklch(0.95 0.004 85); }
+.action-row.done .action-text { text-decoration: line-through; color: var(--text-muted); }
+
+.action-check {
+  width: 16px; height: 16px; border-radius: 3px;
+  border: 1.5px solid var(--border-strong);
+  flex-shrink: 0; cursor: pointer; appearance: none;
+  background: var(--surface); margin-top: 2px;
+  transition: all 0.12s; position: relative;
+}
+.action-check:checked { background: var(--accent); border-color: var(--accent); }
+.action-check:checked::after {
+  content: '✓'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 10px; font-weight: 800;
+}
+.action-content { flex: 1; min-width: 0; }
+.action-text { font-size: 13px; line-height: 1.4; margin-bottom: 3px; }
+.action-meta { display: flex; gap: 11px; font-size: 11px; color: var(--text-muted); }
+.action-owner { font-weight: 700; color: var(--primary); }
+
+.remove-btn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px;
+  transition: color 0.1s;
+}
+.remove-btn:hover { color: var(--danger); }
+
+/* Section-level action area (bottom of AMS / EMEA) */
+.section-actions {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+.section-actions-header {
+  padding: 10px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+.section-action-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 16px; border-bottom: 1px solid var(--border);
+  font-size: 12.5px; transition: background 0.1s;
+}
+.section-action-item:hover { background: oklch(0.95 0.004 85); }
+.section-action-item.done .satext { text-decoration: line-through; color: var(--text-muted); }
+.sacheck {
+  width: 15px; height: 15px; border-radius: 3px;
+  border: 1.5px solid var(--border-strong);
+  flex-shrink: 0; cursor: pointer; appearance: none;
+  background: var(--surface); position: relative;
+  transition: all 0.12s;
+}
+.sacheck:checked { background: var(--accent); border-color: var(--accent); }
+.sacheck:checked::after {
+  content: '✓'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 9px; font-weight: 900;
+}
+.satext  { flex: 1; }
+.saacct  { font-size: 11px; font-weight: 700; color: var(--steel); white-space: nowrap; }
+.saowner { font-size: 11px; font-weight: 700; color: var(--primary); white-space: nowrap; }
+.sadue   { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.sarembtn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 16px; line-height: 1;
+  padding: 0; transition: color 0.1s; flex-shrink: 0;
+}
+.sarembtn:hover { color: var(--danger); }
+
+.section-add-form {
+  display: flex; gap: 6px; align-items: center;
+  padding: 10px 16px; flex-wrap: wrap;
+  background: var(--surface);
+}
+.mini-input, .mini-select {
+  padding: 5px 9px;
+  border: 1px solid var(--border); border-radius: 4px;
+  font-family: var(--font-body); font-size: 12px;
+  color: var(--text-primary); background: var(--surface);
+  outline: none; transition: border-color 0.12s;
+}
+.mini-input:focus, .mini-select:focus { border-color: var(--primary); }
+.mini-input { flex: 1; min-width: 150px; }
+
+/* Forms */
+.form-input, .form-select {
+  padding: 6px 11px; border: 1px solid var(--border); border-radius: 5px;
+  font-family: var(--font-body); font-size: 12.5px;
+  color: var(--text-primary); background: var(--surface);
+  outline: none; transition: border-color 0.12s;
+}
+.form-input:focus, .form-select:focus { border-color: var(--primary); }
+.form-input { flex: 1; min-width: 180px; }
+
+.notes-area {
+  width: 100%; padding: 11px 14px;
+  border: 1px solid var(--border); border-radius: 7px;
+  font-family: var(--font-body); font-size: 13px;
+  color: var(--text-primary); background: var(--surface);
+  resize: vertical; min-height: 120px; outline: none;
+  line-height: 1.65; transition: border-color 0.12s;
+}
+.notes-area:focus { border-color: var(--primary); }
+
+/* ─── ACCOUNT CARD GRID ─────────────────────── */
+.acct-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* Card shell */
+.acct-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
+  border-radius: 8px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: border-top-color 0.15s;
+}
+.acct-card.card-risk    { border-top-color: var(--danger); }
+.acct-card.card-caution { border-top-color: var(--warning); }
+.acct-card.has-actions  { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* Header */
+.acct-header {
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 8px;
+  padding: 10px 13px 9px;
+  border-bottom: 1px solid var(--border);
+}
+.acct-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
+.acct-name { font-size: 15px; font-weight: 700; font-family: var(--font-display); line-height: 1.2; letter-spacing: 0.01em; }
+.acct-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.acct-close {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-muted); white-space: nowrap;
+}
+
+/* Body — labeled rows */
+.acct-body {
+  padding: 9px 13px 10px;
+  flex: 1;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.acct-field {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.acct-label {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--text-muted); padding-top: 1px;
+}
+.acct-value            { color: var(--text-secondary); }
+.acct-value.is-context { color: var(--text-muted); font-style: italic; }
+.acct-field-top        { align-items: start; }
+
+.acct-updates-list {
+  display: flex; flex-direction: column; gap: 5px;
+}
+.acct-update-item {
+  font-size: 11.5px; line-height: 1.4; color: var(--text-secondary);
+}
+.acct-update-item.is-prior {
+  color: var(--text-muted); font-style: italic;
+}
+.update-datestamp {
+  display: inline-block;
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--accent-dark);
+  margin-right: 5px; white-space: nowrap;
+}
+
+/* Flag footer */
+.card-flag-controls {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 13px;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+.flag-controls-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-muted); margin-right: 3px;
+}
+.flag-btn {
+  padding: 2px 9px; font-size: 10.5px; font-weight: 600;
+  border-radius: 20px; border: 1px solid var(--border-strong);
+  cursor: pointer; background: transparent; color: var(--text-muted);
+  transition: all 0.1s;
+}
+.flag-btn-off:hover { color: var(--text-secondary); border-color: var(--text-muted); }
+.flag-btn-risk-on    { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger); }
+.flag-btn-caution-on { background: var(--warning-bg); border-color: var(--warning); color: oklch(0.45 0.14 75); }
+
+/* Kickoff */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+.info-block {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 7px; padding: 16px 18px;
+}
+.info-block-lbl {
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--text-muted); margin-bottom: 10px;
+}
+.chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; background: var(--primary-light);
+  border-radius: 20px; font-size: 12px; font-weight: 500;
+  color: oklch(0.28 0.12 262);
+  border: 1.5px solid transparent;
+  cursor: pointer; transition: all 0.12s;
+}
+.chip:hover { border-color: var(--primary-mid); }
+.chip-absent {
+  background: var(--surface2);
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.empty-state { padding: 26px 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* ─── STAT HOVER POPOVER ─────────────────────── */
+.stat-hover-wrap {
+  position: relative; cursor: default;
+}
+.stat-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  box-shadow: 0 6px 24px oklch(0 0 0 / 0.13);
+  min-width: 260px; max-width: 320px;
+  padding: 8px 4px;
+}
+.stat-hover-wrap:hover .stat-popover { display: block; }
+.stat-pop-row {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.stat-pop-row:last-child { border-bottom: none; }
+.stat-pop-name {
+  font-size: 13px; font-weight: 700;
+  font-family: var(--font-display);
+  margin-bottom: 3px;
+}
+.stat-pop-meta {
+  display: flex; align-items: center; gap: 7px;
+  margin-bottom: 4px;
+}
+.stat-pop-close {
+  font-size: 10.5px; color: var(--text-muted); font-weight: 600;
+}
+.stat-pop-rec {
+  font-size: 11px; color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ─── CARD INLINE ACTIONS ───────────────────── */
+.card-action-badge {
+  display: inline-flex; align-items: center;
+  padding: 1px 7px;
+  background: var(--surface2); color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px; font-size: 10px; font-weight: 600;
+}
+.card-actions-list {
+  border-top: 1px solid var(--border);
+  padding: 7px 13px 8px;
+  display: flex; flex-direction: column; gap: 4px;
+  background: oklch(0.975 0.003 85);
+}
+.card-action-row {
+  display: flex; align-items: center; gap: 7px; font-size: 11.5px;
+}
+.card-action-row.done .card-action-text { text-decoration: line-through; color: var(--text-muted); }
+.card-action-text { flex: 1; color: var(--text-secondary); }
+
+/* ─── ENTRY TYPE TOGGLE ─────────────────────── */
+.entry-type-toggle {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  flex-shrink: 0;
+}
+.type-btn {
+  padding: 5px 13px;
+  font-size: 11.5px; font-weight: 600;
+  background: var(--surface2);
+  border: none; cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.type-btn + .type-btn { border-left: 1px solid var(--border-strong); }
+.type-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+.type-btn:hover:not(.active) {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+/* ─── ADD-ACCOUNT PANEL ─────────────────────── */
+.add-acct-panel {
+  margin-top: 12px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.add-acct-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 16px;
+  cursor: pointer;
+  background: var(--surface2);
+  font-size: 13px; font-weight: 600;
+  color: var(--primary-mid);
+  border: none; width: 100%; text-align: left;
+  transition: background 0.15s;
+}
+.add-acct-toggle:hover { background: var(--primary-light); }
+.add-acct-toggle .toggle-icon { font-size: 15px; transition: transform 0.2s; }
+.add-acct-toggle.open .toggle-icon { transform: rotate(45deg); }
+.add-acct-body {
+  padding: 16px 18px 18px;
+  background: var(--surface);
+  display: none;
+  flex-direction: column; gap: 10px;
+}
+.add-acct-body.open { display: flex; margin-bottom: 14px; }
+.add-acct-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.add-acct-row .mini-input { flex: 1; min-width: 160px; }
+.add-acct-row .mini-select { min-width: 140px; }
+.add-acct-body textarea.mini-input {
+  resize: vertical; min-height: 54px; line-height: 1.45;
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-brand">Vantage Analytics</div>
+    <div class="sidebar-title">CS × Sales Sync</div>
+    <div class="sidebar-date" id="meeting-date-display"></div>
+  </div>
+  <div class="agenda-nav" id="agenda-nav">
+    <div class="agenda-track"></div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1; min-width:0;">
+      <div class="topbar-eyebrow">Now Covering</div>
+      <div class="topbar-section" id="topbar-section-name">Opening</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn" onclick="exportNotes()">↓ Export</button>
+      <button class="btn btn-primary" onclick="nextSection()">Next →</button>
+    </div>
+  </div>
+
+  <div class="content" id="main-content"></div>
+
+  <div class="navbar">
+    <div class="navbar-info" id="navbar-info"></div>
+    <button class="btn" onclick="prevSection()">← Back</button>
+    <button class="btn btn-primary" onclick="nextSection()">Next →</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  AGENDA — 25 min
+// ═══════════════════════════════════════════
+const AGENDA = [
+  { id: 'opening',    label: 'Opening',           duration: 2  },
+  { id: 'prev',       label: 'Prior Actions',      duration: 2  },
+  { id: 'ams',        label: 'AMS Accounts',       duration: 10 },
+  { id: 'emea',       label: 'EMEA Accounts',      duration: 5  },
+  { id: 'priorities', label: 'Priorities & Flags', duration: 4  },
+  { id: 'wrapup',     label: 'Wrap-Up',             duration: 2  },
+];
+// Total: 25 min
+
+// ═══════════════════════════════════════════
+//  ACCOUNTS (default seed data)
+// ═══════════════════════════════════════════
+const STATUS_PILLS = {
+  'Expansion':     'pill-expand',
+  'Active':        'pill-active',
+  'At Risk':       'pill-risk',
+  'Losing Scope':  'pill-risk',
+  'Uncertain':     'pill-caution',
+  'Needs Clarity': 'pill-caution',
+  'Cost Barrier':  'pill-caution',
+  'TBD':           'pill-neutral',
+};
+
+const DEFAULT_ACCOUNTS = [
+  { name: 'JPMC',           region: 'AMS',  status: 'Expansion',    statusCls: 'pill-expand',  close: 'Mar 2027', context: null,
+    rec: 'Continue engaging at AD and Client level to understand willingness to adopt new product suite.',
+    update: 'AD open to engaging with Analytics Consulting — kicking off early May 2026. Paayal syncing with RJ monthly.' },
+  { name: 'Kimberly Clark', region: 'AMS',  status: 'Active',       statusCls: 'pill-active',  close: 'Jun 2026', context: 'Recently procured Kenvue; focus is TM/PJM/PAS.',
+    rec: 'Reach out to Azariah to discuss 2026+ vision and identify opportunities for joint BI or Vantage expansion.',
+    update: 'John reached out to Azariah — will circle back once he meets with his leader Tom on priorities.' },
+  { name: 'Coca-Cola',      region: 'AMS',  status: 'Active',       statusCls: 'pill-active',  close: 'Dec 2027', context: null,
+    rec: 'Engage at AD and technology lead level to confirm 2026 roadmap is comprehensive of all applicable business objectives.',
+    update: 'Occupancy metrics request from Susan Wasmund. John D. to loop in CS after demo.' },
+  { name: 'Nvidia',         region: 'AMS',  status: 'Uncertain',    statusCls: 'pill-caution', close: 'Unclear',  context: null,
+    rec: 'Continue engaging at AD and account team level to understand adoption of NAE.',
+    update: 'Anna has been engaging heavily with AD on NAE adoption and dashboard development.' },
+  { name: 'Mondelez',       region: 'AMS',  status: 'At Risk',      statusCls: 'pill-risk',    close: 'Aug 2027', context: 'Went from heavy adopter to low adopter of Vantage.',
+    rec: 'Re-engage with AD on overall platform and Analytics consulting to surface new opportunities.',
+    update: null },
+  { name: 'Mars',           region: 'AMS',  status: 'Expansion',    statusCls: 'pill-expand',  close: 'Jan 2027', context: 'Unique expansion opportunity on horizon. Heavily engaged with Vantage and AC. Savings is a barrier to proactive initiatives.',
+    rec: 'Focus on driving adoption rather than evolution. Renewal further out — monitor closely.',
+    update: null },
+  { name: 'Uber',           region: 'AMS',  status: 'Losing Scope', statusCls: 'pill-risk',    close: 'TBD',      context: null,
+    rec: 'Occupancy Planning going to Trebellar — determine path forward.',
+    update: null },
+  { name: 'UHG',            region: 'AMS',  status: 'Uncertain',    statusCls: 'pill-caution', close: 'TBD',      context: 'Heavily considering a move to ThoughtSpot for RE data analytics.',
+    rec: 'John H. developed collateral with Dan and Jon M. for product comparisons, demos, and cost evaluations.',
+    update: 'UHG pending decision on ThoughtSpot vs. Vantage.' },
+
+  { name: 'Novartis',       region: 'EMEA', status: 'Needs Clarity',statusCls: 'pill-caution', close: 'Dec 2027', context: '1/9 – may have renewed off-market; need clarity on what scope was renewed out of cycle.',
+    rec: 'AD Frank is data-driven — identify analytics consulting opportunities.',
+    update: null },
+  { name: 'FedEx',          region: 'EMEA', status: 'At Risk',      statusCls: 'pill-risk',    close: 'Oct 2027', context: 'Doing in-house work separate from Vantage, causing workbook speed issues.',
+    rec: 'Engage at AD level to right-size solution in 2026.',
+    update: 'Included in dashboard performance optimization efforts. T. Gibson is new AD and can help influence positive development.' },
+  { name: 'TetraPak',       region: 'EMEA', status: 'Cost Barrier', statusCls: 'pill-caution', close: 'Dec 2027', context: 'Tim Wright and AD waffled between FTE support, Vantage dashboards, and in-house. Open to working with us but cite cost as barrier. Pierre is not a strong adopter.',
+    rec: 'Prioritize client engagement as the path forward.',
+    update: 'Matt R. and Igor partnered on approach to re-engage account team with renewed analytics focus. Dashboards are slow — Matt to hand off to Igor.' },
+];
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const STORE_KEY = 'vantage-cs-sync-v3';
+let state = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+
+if (!state.prevActions) state.prevActions = [
+  { id: 1, text: 'Schedule exec check-in with Mondelez AD to re-engage on platform',                              owner: 'John H.', due: '', done: false },
+  { id: 2, text: 'Clarify Novartis renewal scope renewed off-market on 1/9',                                      owner: 'Igor G.',  due: '', done: false },
+  { id: 3, text: 'Connect Matt R. to Citi analytics consulting opportunity',                                      owner: 'John H.', due: '', done: false },
+  { id: 4, text: 'Hand over modified TetraPak delivery list to Igor for client delivery',                          owner: 'Matt R.', due: '', done: false },
+];
+// Migrate: inject new prior actions that may be missing from persisted state
+const PRIOR_DEFAULTS = [
+  { id: 4, text: 'Hand over modified TetraPak delivery list to Igor for client delivery', owner: 'Matt R.', due: '', done: false },
+];
+PRIOR_DEFAULTS.forEach(def => {
+  if (!state.prevActions.find(a => a.id === def.id)) state.prevActions.push(def);
+});
+if (!state.newActions)  state.newActions  = [];
+if (!state.absentees)   state.absentees   = [];
+if (!state.notes)       state.notes       = '';
+if (!state.nextId)      state.nextId      = 200;
+if (!state.nextMeeting) {
+  const d = new Date();
+  d.setDate(d.getDate() + 14);
+  state.nextMeeting = d.toISOString().split('T')[0];
+}
+if (!state.accounts)    state.accounts    = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+
+// Migrate: backfill fields onto existing persisted accounts
+state.accounts = state.accounts.map(a => {
+  const def = DEFAULT_ACCOUNTS.find(d => d.name === a.name);
+  const seedUpdate = a.update !== undefined ? a.update : (def ? (def.update || null) : null);
+  // Convert legacy string 'update' → 'updates' array with seed entry labelled 'Prior'
+  let updates = a.updates;
+  if (!updates) {
+    updates = seedUpdate ? [{ text: seedUpdate, date: 'Prior' }] : [];
+  }
+  return {
+    ...a,
+    update:      null,   // retired — superseded by updates[]
+    updates,
+    sessionFlag: a.sessionFlag !== undefined ? a.sessionFlag : null,
+  };
+});
+
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function getRegionActions(region) {
+  const names = new Set(state.accounts.filter(a => a.region === region).map(a => a.name));
+  return state.newActions.filter(a => names.has(a.account));
+}
+
+// Account card — clean structured layout
+function acctCard(a) {
+  const cardActions = state.newActions.filter(x => x.account === a.name);
+  const hasActions  = cardActions.length > 0;
+  const { isRisk, isCaution } = effectiveFlags(a);
+  const flagClass = isRisk ? 'card-risk' : isCaution ? 'card-caution' : '';
+
+  // Pill reflects session flag if manually overridden, otherwise shows native status
+  const pillStatus = a.sessionFlag === 'risk'    ? 'At Risk'
+                   : a.sessionFlag === 'caution' ? 'Needs Attn'
+                   : a.status;
+  const pillCls    = a.sessionFlag === 'risk'    ? 'pill-risk'
+                   : a.sessionFlag === 'caution' ? 'pill-caution'
+                   : a.statusCls;
+
+  const actionList = cardActions.map(x => `
+    <div class="card-action-row ${x.done ? 'done' : ''}">
+      <input type="checkbox" class="sacheck" ${x.done ? 'checked' : ''} onchange="toggleNew(${x.id})">
+      <span class="card-action-text">${esc(x.text)}</span>
+      ${x.owner ? `<span class="saowner">${esc(x.owner)}</span>` : ''}
+      ${x.due   ? `<span class="sadue">${esc(x.due)}</span>`   : ''}
+      <button class="sarembtn" onclick="removeNew(${x.id})" title="Remove">×</button>
+    </div>
+  `).join('');
+
+  return `
+    <div class="acct-card ${hasActions ? 'has-actions' : ''} ${flagClass}">
+
+      <div class="acct-header">
+        <div class="acct-name-row">
+          <span class="acct-name">${esc(a.name)}</span>
+          <span class="pill ${pillCls}">${esc(pillStatus)}</span>
+          ${hasActions ? `<span class="card-action-badge">${cardActions.length} action${cardActions.length !== 1 ? 's' : ''}</span>` : ''}
+        </div>
+        <div class="acct-header-right">
+          <span class="acct-close">${esc(a.close)}</span>
+          <button onclick="removeAccount('${esc(a.name)}')" title="Remove"
+            style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:15px;line-height:1;padding:0;opacity:0.4;"
+            onmouseover="this.style.opacity='1';this.style.color='var(--danger)'"
+            onmouseout="this.style.opacity='0.4';this.style.color='var(--text-muted)'">×</button>
+        </div>
+      </div>
+
+      <div class="acct-body">
+        ${a.context ? `<div class="acct-field"><span class="acct-label">Context</span><span class="acct-value is-context">${esc(a.context)}</span></div>` : ''}
+        <div class="acct-field"><span class="acct-label">Rec</span><span class="acct-value">${esc(a.rec)}</span></div>
+        ${a.updates && a.updates.length ? `
+          <div class="acct-field acct-field-top">
+            <span class="acct-label">Updates</span>
+            <div class="acct-updates-list">
+              ${a.updates.map(u => `
+                <div class="acct-update-item ${u.date === 'Prior' ? 'is-prior' : ''}">
+                  <span class="update-datestamp">${esc(u.date)}</span>${esc(u.text)}
+                </div>
+              `).join('')}
+            </div>
+          </div>` : ''}
+      </div>
+
+      <div class="card-flag-controls">
+        <span class="flag-controls-label">Flag</span>
+        <button class="flag-btn ${isRisk    ? 'flag-btn-risk-on'    : 'flag-btn-off'}" onclick="setFlag('${esc(a.name)}','risk')">At Risk</button>
+        <button class="flag-btn ${isCaution ? 'flag-btn-caution-on' : 'flag-btn-off'}" onclick="setFlag('${esc(a.name)}','caution')">Needs Attn</button>
+      </div>
+
+      ${hasActions ? `<div class="card-actions-list">${actionList}</div>` : ''}
+    </div>
+  `;
+}
+
+// Section capture panel — Action or Update toggle
+function renderSectionActions(region) {
+  const accounts = state.accounts.filter(a => a.region === region);
+  const actions  = getRegionActions(region);
+  const rid = region.toLowerCase();
+
+  const actionRows = actions.map(a => `
+    <div class="section-action-item ${a.done ? 'done' : ''}">
+      <input type="checkbox" class="sacheck" ${a.done ? 'checked' : ''} onchange="toggleNew(${a.id})">
+      <span class="satext">${esc(a.text)}</span>
+      ${a.account ? `<span class="saacct">${esc(a.account)}</span>` : ''}
+      ${a.owner   ? `<span class="saowner">${esc(a.owner)}</span>` : ''}
+      ${a.due     ? `<span class="sadue">${esc(a.due)}</span>` : ''}
+      <button class="sarembtn" onclick="removeNew(${a.id})" title="Remove">×</button>
+    </div>
+  `).join('');
+
+  return `
+    <div class="section-actions">
+      <div class="section-actions-header">
+        Captured — ${region}${actions.length > 0 ? ` <span style="color:var(--primary); margin-left:6px;">${actions.length} action${actions.length !== 1 ? 's' : ''}</span>` : ''}
+      </div>
+      ${actionRows}
+      <div class="section-add-form">
+        <div class="entry-type-toggle">
+          <button id="tb-action-${rid}" class="type-btn active" onclick="setEntryType('${region}','action')">Action</button>
+          <button id="tb-update-${rid}" class="type-btn" onclick="setEntryType('${region}','update')">Update</button>
+        </div>
+        <input class="mini-input" id="at-${rid}" placeholder="Action item…" style="flex:2; min-width:180px;"
+          onkeydown="if(event.key==='Enter') sectionSubmit('${region}')">
+        <select class="mini-select" id="aa-${rid}" style="min-width:130px;">
+          <option value="">Account</option>
+          ${accounts.map(a => `<option>${esc(a.name)}</option>`).join('')}
+        </select>
+        <div id="action-only-${rid}" style="display:contents;">
+          <select class="mini-select" id="ao-${rid}" style="min-width:110px;">
+            <option value="">Owner</option>
+            <optgroup label="CS">
+              <option>John H.</option><option>Anna M.</option><option>Igor G.</option>
+            </optgroup>
+            <optgroup label="Sales">
+              <option>Paayal K.</option><option>Emily S.</option>
+              <option>Megan R.</option><option>John D.</option><option>Matt R.</option>
+            </optgroup>
+          </select>
+          <input type="date" class="mini-select" id="ad-${rid}" style="min-width:130px;">
+        </div>
+        <button class="btn-sm-accent" id="submit-btn-${rid}" onclick="sectionSubmit('${region}')">+ Action</button>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+//  VIEWS
+// ═══════════════════════════════════════════
+function viewOpening() {
+  const totalMin = AGENDA.reduce((s, a) => s + a.duration, 0);
+  const atRisk   = state.accounts.filter(a => a.statusCls === 'pill-risk').length;
+  const caution  = state.accounts.filter(a => a.statusCls === 'pill-caution').length;
+  const expand   = state.accounts.filter(a => a.statusCls === 'pill-expand').length;
+  const openPrev = state.prevActions.filter(a => !a.done).length;
+
+  return `
+    <div class="two-col">
+      <div class="info-block">
+        <div class="info-block-lbl" style="margin-bottom:6px;">Attendees <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:10px; color:var(--text-muted);">— click to mark absent</span></div>
+        <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-bottom:6px;">CS</div>
+        <div class="chip-list" style="margin-bottom:10px;">
+          ${[['John H.','Lead'],['Anna M.',''],['Igor G.','']]
+            .map(([n,role]) => {
+              const absent = state.absentees.includes(n);
+              return `<button class="chip ${absent ? 'chip-absent' : ''}" onclick="toggleAbsentee('${n}')">${n}${role ? ` <span style="opacity:.5;font-size:10px;margin-left:2px;">${role}</span>` : ''}</button>`;
+            }).join('')}
+        </div>
+        <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-bottom:6px;">Sales</div>
+        <div class="chip-list">
+          ${['Paayal K.','Emily S.','Megan R.','John D.','Matt R.']
+            .map(n => {
+              const absent = state.absentees.includes(n);
+              return `<button class="chip ${absent ? 'chip-absent' : ''}" onclick="toggleAbsentee('${n}')">${n}</button>`;
+            }).join('')}
+        </div>
+      </div>
+      <div class="info-block">
+        <div class="info-block-lbl">Portfolio — ${state.accounts.length} accounts</div>
+        <div style="display:flex; gap:18px; margin-top:8px; margin-bottom:14px;">
+          ${[
+            { count: expand,  label: 'Expansion', color: 'var(--success)', cls: 'pill-expand'  },
+            { count: caution, label: 'Caution',   color: 'var(--warning)', cls: 'pill-caution' },
+            { count: atRisk,  label: 'At Risk',   color: 'var(--danger)',  cls: 'pill-risk'    },
+          ].map(({ count, label, color, cls }) => {
+            const accts = state.accounts.filter(a => a.statusCls === cls);
+            const rows  = accts.map(a => `
+              <div class="stat-pop-row">
+                <div class="stat-pop-name">${esc(a.name)}</div>
+                <div class="stat-pop-meta">
+                  <span class="pill ${a.statusCls}" style="font-size:9.5px; padding:1px 7px;">${esc(a.status)}</span>
+                  <span class="stat-pop-close">${esc(a.close)}</span>
+                </div>
+                ${a.rec ? `<div class="stat-pop-rec">${esc(a.rec)}</div>` : ''}
+              </div>
+            `).join('');
+            return `
+              <div class="stat-hover-wrap">
+                <div style="font-family:var(--font-display); font-size:26px; font-weight:700; color:${color}; line-height:1;">${count}</div>
+                <div style="font-size:11px; color:var(--text-muted);">${label}</div>
+                ${count > 0 ? `<div class="stat-popover">${rows}</div>` : ''}
+              </div>`;
+          }).join('')}
+        </div>
+        <div class="info-block-lbl">Open from Last Meeting</div>
+        <div class="stat-hover-wrap" style="display:inline-block;">
+          <div style="font-family:var(--font-display); font-size:26px; font-weight:700; color:${openPrev > 0 ? 'var(--warning)' : 'var(--success)'}; line-height:1;">${openPrev}</div>
+          <div style="font-size:11px; color:var(--text-muted);">action${openPrev !== 1 ? 's' : ''} still open</div>
+          ${openPrev > 0 ? `
+            <div class="stat-popover" style="left:0; transform:none; min-width:280px;">
+              ${state.prevActions.filter(a => !a.done).map(a => `
+                <div class="stat-pop-row">
+                  <div class="stat-pop-name" style="font-size:12px;">${esc(a.text)}</div>
+                  <div class="stat-pop-meta">
+                    <span class="saowner">${esc(a.owner)}</span>
+                    ${a.due ? `<span class="stat-pop-close">Due ${esc(a.due)}</span>` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="info-block">
+        <div class="info-block-lbl">Closest Expected Closes</div>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+          ${state.accounts.filter(a => !['TBD','Unclear'].includes(a.close)).sort((a,b) => {
+            const mo = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+            const p  = d => { const [m,y] = d.split(' '); return parseInt(y)*100+(mo[m]||0); };
+            return p(a.close) - p(b.close);
+          }).slice(0,4).map(a => `
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:12.5px;">
+              <span style="font-weight:600;">${esc(a.name)}</span>
+              <span style="font-family:var(--font-display); font-weight:600; color:var(--text-muted);">${esc(a.close)}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="info-block">
+        <div class="info-block-lbl">Today's Agenda — ${totalMin} min</div>
+        <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
+          ${AGENDA.map((a,i) => `
+            <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
+              <span style="font-size:10px; font-weight:700; color:var(--text-muted); min-width:16px;">${i+1}.</span>
+              <span style="flex:1; color:var(--text-secondary);">${a.label}</span>
+              <span style="font-size:11px; color:var(--text-muted);">${a.duration} min</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function viewPrev() {
+  const open = state.prevActions.filter(a => !a.done);
+  const done = state.prevActions.filter(a =>  a.done);
+  const rows = list => list.map(a => `
+    <div class="action-row ${a.done ? 'done' : ''}">
+      <input type="checkbox" class="action-check" ${a.done ? 'checked' : ''} onchange="togglePrev(${a.id})">
+      <div class="action-content">
+        <div class="action-text">${esc(a.text)}</div>
+        <div class="action-meta">
+          <span class="action-owner">${esc(a.owner)}</span>
+          ${a.due ? `<span>Due ${esc(a.due)}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+  return `
+    <div class="section-heading">Prior Action Items</div>
+    <div style="margin-bottom:18px;">
+      <div class="sublabel">Open (${open.length})</div>
+      <div class="table-wrap">
+        <div class="action-list">
+          ${open.length === 0 ? '<div class="empty-state">All prior actions completed ✓</div>' : rows(open)}
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sublabel">Completed (${done.length})</div>
+      <div class="table-wrap">
+        <div class="action-list">
+          ${done.length === 0 ? '<div class="empty-state">None completed yet</div>' : rows(done)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function sortByClose(list) {
+  const mo = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  const p  = d => ['TBD','Unclear'].includes(d) ? 999999 : (() => { const [m,y] = d.split(' '); return parseInt(y)*100+(mo[m]||0); })();
+  return [...list].sort((a,b) => p(a.close) - p(b.close));
+}
+
+function viewAMS() {
+  const ams = sortByClose(state.accounts.filter(a => a.region === 'AMS'));
+  return `
+    <div class="section-heading">AMS Accounts (${ams.length})
+      <button class="section-heading-add" onclick="toggleAddForm('AMS')" title="Add account">+</button>
+    </div>
+    ${renderAddAccountForm('AMS')}
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px; max-width:68ch; line-height:1.5;">
+      Review each account and align on close timelines, then log any actions below.
+    </p>
+    <div class="acct-grid">${ams.map(acctCard).join('')}</div>
+    ${renderSectionActions('AMS')}
+  `;
+}
+
+function viewEMEA() {
+  const emea = sortByClose(state.accounts.filter(a => a.region === 'EMEA'));
+  return `
+    <div class="section-heading">EMEA Accounts (${emea.length})
+      <button class="section-heading-add" onclick="toggleAddForm('EMEA')" title="Add account">+</button>
+    </div>
+    ${renderAddAccountForm('EMEA')}
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px; max-width:68ch; line-height:1.5;">
+      Review each account and align on close timelines, then log any actions below.
+    </p>
+    <div class="acct-grid">${emea.map(acctCard).join('')}</div>
+    ${renderSectionActions('EMEA')}
+  `;
+}
+
+function viewPriorities() {
+  const atRisk  = state.accounts.filter(a => effectiveFlags(a).isRisk);
+  const caution = state.accounts.filter(a => { const f = effectiveFlags(a); return f.isCaution && !f.isRisk; });
+  const nearTerm = state.accounts.filter(a => !['TBD','Unclear'].includes(a.close))
+    .sort((a,b) => {
+      const mo = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+      const p  = d => { const [m,y] = d.split(' '); return parseInt(y)*100+(mo[m]||0); };
+      return p(a.close) - p(b.close);
+    }).slice(0, 4);
+
+  const flagBlock = (list, heading, cls, top) => {
+    if (!list.length) return '';
+    return `
+      <div class="sublabel" style="margin-bottom:9px; ${top ? 'margin-top:20px;' : ''}">${heading}</div>
+      <div class="table-wrap" style="margin-bottom:0;">
+        ${list.map(a => `
+          <div style="display:flex; align-items:flex-start; gap:14px; padding:13px 16px; border-bottom:1px solid var(--border);">
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span style="font-weight:700; font-size:14px;">${esc(a.name)}</span>
+                <span class="pill ${cls}">${esc(a.status)}</span>
+                <span style="font-size:11px; color:var(--text-muted);">${a.region} · ${esc(a.close)}</span>
+              </div>
+              ${a.context ? `<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:6px; max-width:65ch; line-height:1.45;">${esc(a.context)}</div>` : ''}
+              <div class="acct-rec"><strong>Rec:</strong> ${esc(a.rec)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  };
+
+  return `
+    <div class="section-heading">Priorities & Flags</div>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:18px; max-width:68ch; line-height:1.5;">
+      Confirm one named owner and next action for each flagged account before closing.
+    </p>
+    ${flagBlock(atRisk, 'Immediate — At Risk', 'pill-risk', false)}
+    ${flagBlock(caution, 'Needs Attention', 'pill-caution', true)}
+
+    <div class="sublabel" style="margin-top:20px; margin-bottom:9px;">Closest Expected Closes</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Account</th><th>Region</th><th>Status</th><th>Expected Close</th></tr></thead>
+        <tbody>
+          ${nearTerm.map(a => `
+            <tr>
+              <td style="font-weight:700;">${esc(a.name)}</td>
+              <td style="color:var(--text-muted);">${a.region}</td>
+              <td><span class="pill ${a.statusCls}">${esc(a.status)}</span></td>
+              <td style="font-family:var(--font-display); font-weight:700; color:var(--accent-dark);">${esc(a.close)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function viewWrapup() {
+  const open    = state.prevActions.filter(a => !a.done);
+  const allNew  = state.newActions;
+  const allOpen = [...open, ...allNew.filter(a => !a.done)];
+
+  return `
+    <div class="section-heading">Wrap-Up & Next Steps</div>
+    <div class="two-col" style="margin-bottom:20px;">
+      <div class="info-block">
+        <div class="info-block-lbl">This Meeting</div>
+        <div style="display:flex; gap:22px; margin-top:8px;">
+          <div class="stat-hover-wrap" style="display:inline-block;">
+            <div style="font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--accent-dark); line-height:1;">${allNew.length}</div>
+            <div style="font-size:11px; color:var(--text-muted);">new actions</div>
+            ${allNew.length > 0 ? `
+              <div class="stat-popover" style="left:0; transform:none; min-width:290px;">
+                ${allNew.map(a => `
+                  <div class="stat-pop-row">
+                    <div class="stat-pop-name" style="font-size:12px;">${esc(a.text)}</div>
+                    <div class="stat-pop-meta">
+                      ${a.account ? `<span class="saacct">${esc(a.account)}</span>` : ''}
+                      <span class="saowner">${esc(a.owner)}</span>
+                      ${a.due ? `<span class="stat-pop-close">Due ${esc(a.due)}</span>` : ''}
+                    </div>
+                  </div>`).join('')}
+              </div>` : ''}
+          </div>
+          <div class="stat-hover-wrap" style="display:inline-block;">
+            <div style="font-family:var(--font-display); font-size:26px; font-weight:700; color:${open.length > 0 ? 'var(--warning)' : 'var(--success)'}; line-height:1;">${open.length}</div>
+            <div style="font-size:11px; color:var(--text-muted);">still open from last</div>
+            ${open.length > 0 ? `
+              <div class="stat-popover" style="left:0; transform:none; min-width:290px;">
+                ${open.map(a => `
+                  <div class="stat-pop-row">
+                    <div class="stat-pop-name" style="font-size:12px;">${esc(a.text)}</div>
+                    <div class="stat-pop-meta">
+                      <span class="saowner">${esc(a.owner)}</span>
+                      ${a.due ? `<span class="stat-pop-close">Due ${esc(a.due)}</span>` : ''}
+                    </div>
+                  </div>`).join('')}
+              </div>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="info-block">
+        <div class="info-block-lbl">Next Meeting Date</div>
+        <input type="date" class="form-input" id="next-meeting"
+          value="${esc(state.nextMeeting)}"
+          oninput="state.nextMeeting = this.value; save();"
+          style="margin-top:8px;">
+      </div>
+    </div>
+
+    <div class="sublabel" style="margin-bottom:10px;">All Open Actions (${allOpen.length})</div>
+    <div class="table-wrap" style="margin-bottom:18px;">
+      <table class="data-table">
+        <thead><tr><th>Action</th><th>Account</th><th>Owner</th><th>Due</th><th>Source</th></tr></thead>
+        <tbody>
+          ${allOpen.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:22px; color:var(--text-muted);">No open actions — great work!</td></tr>' : ''}
+          ${open.map(a => `
+            <tr>
+              <td>${esc(a.text)}</td>
+              <td style="color:var(--text-muted);">—</td>
+              <td style="font-weight:700; color:var(--primary);">${esc(a.owner)}</td>
+              <td style="font-size:12px; color:var(--text-muted);">${esc(a.due)||'—'}</td>
+              <td><span style="font-size:10.5px; color:var(--text-muted); font-style:italic;">Prior</span></td>
+            </tr>
+          `).join('')}
+          ${allNew.filter(a => !a.done).map(a => `
+            <tr>
+              <td>${esc(a.text)}</td>
+              <td style="font-weight:600; font-size:12px; color:var(--text-secondary);">${esc(a.account||'—')}</td>
+              <td style="font-weight:700; color:var(--primary);">${esc(a.owner)}</td>
+              <td style="font-size:12px; color:var(--text-muted);">${esc(a.due)||'—'}</td>
+              <td><span style="background:var(--accent); color:var(--accent-text); padding:1px 7px; border-radius:3px; font-size:10.5px; font-weight:700;">Today</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sublabel" style="margin-bottom:8px;">Meeting Notes</div>
+    <textarea class="notes-area" id="notes-ta"
+      placeholder="Decisions, open questions, context for next meeting…"
+      oninput="saveNotes()">${esc(state.notes)}</textarea>
+  `;
+}
+
+// ═══════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════
+const VIEWS = {
+  opening: viewOpening, prev: viewPrev,
+  ams: viewAMS, emea: viewEMEA,
+  priorities: viewPriorities, wrapup: viewWrapup,
+};
+
+let cur = 0;
+
+function render() {
+  const ag = AGENDA[cur];
+  document.getElementById('main-content').innerHTML = (VIEWS[ag.id] || (() => ''))();
+  document.getElementById('topbar-section-name').textContent = ag.label;
+  document.getElementById('navbar-info').textContent = `Step ${cur+1} of ${AGENDA.length} · ${ag.duration} min`;
+  renderNav();
+  document.querySelector('.content')?.scrollTo?.(0, 0);
+}
+
+function renderNav() {
+  const nav = document.getElementById('agenda-nav');
+  let html = '<div class="agenda-track"></div>';
+  AGENDA.forEach((a, i) => {
+    const cls = ['agenda-item', i < cur ? 'done' : '', i === cur ? 'active' : ''].filter(Boolean).join(' ');
+    html += `<div class="${cls}" onclick="go(${i})">
+      <div class="agenda-dot"></div>
+      <span class="agenda-label">${a.label}</span>
+      <span class="agenda-dur">${a.duration}m</span>
+    </div>`;
+  });
+  nav.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function go(i)         { cur = i; render(); }
+function nextSection() { if (cur < AGENDA.length - 1) { cur++; render(); } }
+function prevSection() { if (cur > 0) { cur--; render(); } }
+
+// ═══════════════════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════════════════
+function togglePrev(id) {
+  const a = state.prevActions.find(x => x.id === id);
+  if (a) { a.done = !a.done; save(); render(); }
+}
+function toggleNew(id) {
+  const a = state.newActions.find(x => x.id === id);
+  if (a) { a.done = !a.done; save(); render(); }
+}
+function removeNew(id) {
+  state.newActions = state.newActions.filter(x => x.id !== id);
+  save(); render();
+}
+
+function sectionAdd(region) {
+  const rid   = region.toLowerCase();
+  const text  = document.getElementById('at-' + rid)?.value.trim();
+  const acct  = document.getElementById('aa-' + rid)?.value;
+  const owner = document.getElementById('ao-' + rid)?.value;
+  const due   = document.getElementById('ad-' + rid)?.value;
+  if (!text) { document.getElementById('at-' + rid)?.focus(); return; }
+  state.newActions.push({
+    id: state.nextId++, text,
+    account: acct || null,
+    owner: owner || 'Unassigned',
+    due: due || '', done: false,
+  });
+  save(); render();
+}
+
+// ─── ATTENDEES ────────────────────────────
+function toggleAbsentee(name) {
+  const i = state.absentees.indexOf(name);
+  if (i === -1) state.absentees.push(name);
+  else state.absentees.splice(i, 1);
+  save(); render();
+}
+
+// ─── ACCOUNT FLAGS ────────────────────────
+function effectiveFlags(a) {
+  const sf = a.sessionFlag;
+  // Flags are mutually exclusive: a manual sessionFlag overrides the native statusCls
+  // 'dismiss' suppresses both; 'risk' suppresses native caution; 'caution' suppresses native risk
+  return {
+    isRisk:    sf !== 'dismiss' && sf !== 'caution' && (a.statusCls === 'pill-risk'    || sf === 'risk'),
+    isCaution: sf !== 'dismiss' && sf !== 'risk'    && (a.statusCls === 'pill-caution' || sf === 'caution'),
+  };
+}
+function setFlag(name, flagType) {
+  const acct = state.accounts.find(a => a.name === name);
+  if (!acct) return;
+  const { isRisk, isCaution } = effectiveFlags(acct);
+  const currently = flagType === 'risk' ? isRisk : isCaution;
+  if (currently) {
+    // Toggle off — 'dismiss' overrides any native statusCls too
+    acct.sessionFlag = 'dismiss';
+  } else {
+    // Toggle on (also clears any prior dismiss)
+    acct.sessionFlag = flagType;
+  }
+  save(); render();
+}
+
+// ─── ACTION / UPDATE TYPE TOGGLE ──────────
+const entryType = {};
+
+function setEntryType(region, type) {
+  entryType[region] = type;
+  const rid      = region.toLowerCase();
+  const isUpdate = type === 'update';
+
+  document.getElementById('tb-action-' + rid)?.classList.toggle('active', !isUpdate);
+  document.getElementById('tb-update-' + rid)?.classList.toggle('active', isUpdate);
+
+  const aoDiv = document.getElementById('action-only-' + rid);
+  if (aoDiv) aoDiv.style.display = isUpdate ? 'none' : 'contents';
+
+  const textInput = document.getElementById('at-' + rid);
+  if (textInput) textInput.placeholder = isUpdate ? 'Latest update text…' : 'Action item…';
+
+  const btn = document.getElementById('submit-btn-' + rid);
+  if (btn) btn.textContent = isUpdate ? '↑ Save Update' : '+ Action';
+}
+
+function sectionSubmit(region) {
+  const type = entryType[region] || 'action';
+  if (type === 'update') sectionSaveUpdate(region);
+  else sectionAdd(region);
+}
+
+function sectionSaveUpdate(region) {
+  const rid      = region.toLowerCase();
+  const text     = document.getElementById('at-' + rid)?.value.trim();
+  const acctName = document.getElementById('aa-' + rid)?.value;
+  if (!text)     { document.getElementById('at-' + rid)?.focus(); return; }
+  if (!acctName) { document.getElementById('aa-' + rid)?.focus(); return; }
+  const acct = state.accounts.find(a => a.name === acctName);
+  if (acct) {
+    if (!acct.updates) acct.updates = [];
+    const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    acct.updates.push({ text, date });
+    save(); render();
+  }
+}
+
+function saveNotes() {
+  state.notes = document.getElementById('notes-ta')?.value || '';
+  save();
+}
+
+// ─── ACCOUNT MANAGEMENT ───────────────────
+function removeAccount(name) {
+  if (!confirm(`Remove "${name}" from this meeting?\n\nThis only affects this session's view — you can re-add it at any time.`)) return;
+  state.accounts = state.accounts.filter(a => a.name !== name);
+  save(); render();
+}
+
+function toggleAddForm(region) {
+  const body = document.getElementById('aaf-body-' + region);
+  if (!body) return;
+  body.classList.toggle('open');
+}
+
+function addAccount(region) {
+  const name    = document.getElementById('aaf-name-'    + region)?.value.trim();
+  const status  = document.getElementById('aaf-status-'  + region)?.value;
+  const close   = document.getElementById('aaf-close-'   + region)?.value.trim() || 'TBD';
+  const context = document.getElementById('aaf-context-' + region)?.value.trim() || null;
+  const rec     = document.getElementById('aaf-rec-'     + region)?.value.trim();
+
+  if (!name)   { document.getElementById('aaf-name-'   + region)?.focus(); return; }
+  if (!status) { document.getElementById('aaf-status-' + region)?.focus(); return; }
+  if (!rec)    { document.getElementById('aaf-rec-'    + region)?.focus(); return; }
+
+  if (state.accounts.find(a => a.name.toLowerCase() === name.toLowerCase())) {
+    alert(`An account named "${name}" already exists.`);
+    return;
+  }
+
+  state.accounts.push({
+    name, region, status,
+    statusCls: STATUS_PILLS[status] || 'pill-neutral',
+    close, context: context || null, rec,
+  });
+  save(); render();
+}
+
+function renderAddAccountForm(region) {
+  const statuses = Object.keys(STATUS_PILLS);
+  return `
+    <div id="aaf-body-${region}" class="add-acct-body">
+      <div class="add-acct-row">
+        <input class="mini-input" id="aaf-name-${region}" placeholder="Account name *" style="flex:2;">
+        <select class="mini-select" id="aaf-status-${region}" style="min-width:150px;">
+          <option value="">Status *</option>
+          ${statuses.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('')}
+        </select>
+        <input class="mini-input" id="aaf-close-${region}" placeholder="Expected close (e.g. Jun 2026)">
+      </div>
+      <div class="add-acct-row">
+        <textarea class="mini-input" id="aaf-context-${region}" placeholder="Context / background (optional)" style="flex:1;"></textarea>
+      </div>
+      <div class="add-acct-row">
+        <textarea class="mini-input" id="aaf-rec-${region}" placeholder="Recommended next step *" style="flex:1;"></textarea>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn" onclick="toggleAddForm('${region}')">Cancel</button>
+        <button class="btn-sm-accent" onclick="addAccount('${region}')" style="padding:6px 18px;">Add Account</button>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════
+function exportNotes() {
+  const d = new Date().toISOString().split('T')[0];
+  let out = `CS × Sales Sync — Vantage Analytics\n${d}\n${'='.repeat(44)}\n\n`;
+  out += `NEW ACTIONS (${state.newActions.length}):\n`;
+  state.newActions.forEach((a,i) => {
+    out += `  ${i+1}. [${a.account||'General'}] ${a.text}\n     Owner: ${a.owner}${a.due ? '  |  Due: '+a.due : ''}\n`;
+  });
+  const op = state.prevActions.filter(x => !x.done);
+  if (op.length) {
+    out += `\nSTILL OPEN FROM LAST (${op.length}):\n`;
+    op.forEach((a,i) => { out += `  ${i+1}. ${a.text}\n     Owner: ${a.owner}\n`; });
+  }
+  if (state.notes)       out += `\nNOTES:\n${state.notes}\n`;
+  if (state.nextMeeting) out += `\nNEXT MEETING: ${state.nextMeeting}\n`;
+  const blob = new Blob([out], { type:'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = `cs-sales-sync-${d}.txt`; link.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════
+(function init() {
+  document.getElementById('meeting-date-display').textContent =
+    new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+  render();
+})();
+</script>
+</body>
+</html>
