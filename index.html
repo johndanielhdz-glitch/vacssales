@@ -361,6 +361,15 @@ body {
 }
 .form-input:focus, .form-select:focus { border-color: var(--primary); }
 .form-input { flex: 1; min-width: 180px; }
+.due-inline {
+  padding: 3px 7px; border: 1px solid var(--border); border-radius: 5px;
+  font-family: var(--font-body); font-size: 12px;
+  color: var(--text-primary); background: var(--surface);
+  outline: none; transition: border-color 0.12s; cursor: pointer;
+  width: 130px;
+}
+.due-inline:hover { border-color: var(--border-strong); }
+.due-inline:focus { border-color: var(--primary); }
 
 .notes-area {
   width: 100%; padding: 11px 14px;
@@ -1215,13 +1224,6 @@ function viewEMEA() {
 function viewPriorities() {
   const atRisk  = state.accounts.filter(a => effectiveFlags(a).isRisk);
   const caution = state.accounts.filter(a => { const f = effectiveFlags(a); return f.isCaution && !f.isRisk; });
-  const nearTerm = state.accounts.filter(a => !['TBD','Unclear'].includes(a.close))
-    .sort((a,b) => {
-      const mo = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-      const p  = d => { const [m,y] = d.split(' '); return parseInt(y)*100+(mo[m]||0); };
-      return p(a.close) - p(b.close);
-    }).slice(0, 4);
-
   const flagBlock = (list, heading, top) => {
     if (!list.length) return '';
     return `
@@ -1240,9 +1242,6 @@ function viewPriorities() {
     ${noFlags ? `<div class="empty-state" style="margin-bottom:20px;">No accounts flagged this session — use the <strong>At Risk</strong> / <strong>Needs Attn</strong> toggles on account cards to flag items here.</div>` : ''}
     ${flagBlock(atRisk, 'Immediate — At Risk', false)}
     ${flagBlock(caution, 'Needs Attention', true)}
-
-    <div class="sublabel" style="margin-top:24px; margin-bottom:11px;">Closest Expected Closes</div>
-    <div class="acct-grid">${nearTerm.map(a => acctCard(a)).join('')}</div>
     ${renderSectionActions('ALL')}
   `;
 }
@@ -1311,7 +1310,8 @@ function viewWrapup() {
               <td style="width:160px;">${clientChip(a.account||null)}</td>
               <td>${esc(a.text)}</td>
               <td style="font-weight:700; color:var(--primary);">${esc(a.owner)}</td>
-              <td style="font-size:12px; color:var(--text-muted);">${esc(a.due)||'—'}</td>
+              <td><input type="date" class="due-inline" value="${esc(a.due || state.nextMeeting || '')}"
+                onchange="setPrevDue(${a.id}, this.value)" title="Set due date (defaults to next meeting)"></td>
               <td><span style="font-size:10.5px; color:var(--text-muted); font-style:italic;">Prior</span></td>
             </tr>
           `).join('')}
@@ -1320,7 +1320,8 @@ function viewWrapup() {
               <td style="width:160px;">${clientChip(a.account||null)}</td>
               <td>${esc(a.text)}</td>
               <td style="font-weight:700; color:var(--primary);">${esc(a.owner)}</td>
-              <td style="font-size:12px; color:var(--text-muted);">${esc(a.due)||'—'}</td>
+              <td><input type="date" class="due-inline" value="${esc(a.due || state.nextMeeting || '')}"
+                onchange="setNewDue(${a.id}, this.value)" title="Set due date (defaults to next meeting)"></td>
               <td><span style="background:var(--accent); color:var(--accent-text); padding:1px 7px; border-radius:3px; font-size:10.5px; font-weight:700;">Today</span></td>
             </tr>
           `).join('')}
@@ -1391,6 +1392,14 @@ function removeNew(id) {
   state.newActions = state.newActions.filter(x => x.id !== id);
   save(); render();
 }
+function setPrevDue(id, val) {
+  const a = state.prevActions.find(x => x.id === id);
+  if (a) { a.due = val; save(); }
+}
+function setNewDue(id, val) {
+  const a = state.newActions.find(x => x.id === id);
+  if (a) { a.due = val; save(); }
+}
 
 function sectionAdd(region) {
   const rid   = region.toLowerCase();
@@ -1403,7 +1412,7 @@ function sectionAdd(region) {
     id: state.nextId++, text,
     account: acct || null,
     owner: owner || 'Unassigned',
-    due: due || '', done: false,
+    due: due || state.nextMeeting || '', done: false,
   });
   save(); render();
 }
